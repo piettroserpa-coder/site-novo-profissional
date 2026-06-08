@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Relatórios Financeiros - VendaPlus</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .card-metric {
+            border: none;
+            border-radius: 15px;
+            background: white;
+            transition: transform 0.2s;
+        }
+
+        .card-metric:hover {
+            transform: translateY(-3px);
+        }
+
+        .icon-shape {
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 20px;
+        }
+
+        .card-chart {
+            border: none;
+            border-radius: 15px;
+            background: white;
+        }
+
+        /* Estilo customizado para a seção de metas */
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 10px;
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+            transition: width 1s ease-in-out;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container mt-5 pb-5">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark">📊 Relatório de Desempenho</h2>
+                <p class="text-muted mb-0">Análise de faturamento, vendas de iPhones e artigos de grife.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('exportar_csv') }}"
+                    class="btn btn-success btn-sm d-flex align-items-center shadow-sm px-3">
+                    📊 Exportar Filtro Atual para CSV
+                </a>
+                <a href="/dashboard"
+                    class="btn btn-outline-secondary btn-sm border-0 shadow-sm px-3 bg-white d-flex align-items-center">
+                    <i class="fas fa-arrow-left me-2"></i>Voltar ao Painel
+                </a>
+            </div>
+        </div>
+
+        <div class="card card-metric p-3 shadow-sm mb-4">
+            <form method="GET" action="/relatorios" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label class="text-muted fw-bold small text-uppercase"><i
+                            class="fas fa-calendar-alt me-2"></i>Filtrar Período:</label>
+                </div>
+                <div class="col-auto">
+                    <select name="periodo" class="form-select form-select-sm border-2" onchange="this.form.submit()"
+                        style="border-radius: 8px; width: 200px;">
+                        <option value="todos" {% if periodo_selecionado=='todos' %}selected{% endif %}>Todo o Histórico
+                        </option>
+                        <option value="hoje" {% if periodo_selecionado=='hoje' %}selected{% endif %}>Hoje</option>
+                        <option value="7_dias" {% if periodo_selecionado=='7_dias' %}selected{% endif %}>Últimos 7 dias
+                        </option>
+                        <option value="este_mes" {% if periodo_selecionado=='este_mes' %}selected{% endif %}>Este Mês
+                        </option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card card-metric p-3 shadow-sm border-start border-primary border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Faturamento Bruto</span>
+                            <h3 class="fw-bold mb-0 mt-1 text-primary">R$ {{ "%.2f"|format(faturamento) }}</h3>
+                        </div>
+                        <div class="icon-shape bg-primary text-white"><i class="fas fa-wallet"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="card card-metric p-3 shadow-sm border-start border-danger border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Despesas</span>
+                            <h3 class="fw-bold mb-0 mt-1 text-danger">R$ {{ "%.2f"|format(despesas_total) }}</h3>
+                        </div>
+                        <div class="icon-shape bg-danger-subtle text-danger"><i class="fas fa-money-bill-wave"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-metric p-3 shadow-sm border-start border-success border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Lucro Líquido</span>
+                            <h3 class="fw-bold mb-0 mt-1 text-success">R$ {{ "%.2f"|format(lucro) }}</h3>
+                        </div>
+                        <div class="icon-shape bg-success text-white"><i class="fas fa-hand-holding-usd"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="card card-metric p-3 shadow-sm border-start border-info border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Ticket Médio</span>
+                            <h3 class="fw-bold mb-0 mt-1 text-info">
+                                {% if vendas|length > 0 %}
+                                R$ {{ "%.2f"|format(faturamento / vendas|length) }}
+                                {% else %}
+                                R$ 0,00
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="icon-shape bg-info text-white"><i class="fas fa-chart-line"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-2">
+                <div class="card card-metric p-3 shadow-sm border-start border-warning border-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="text-muted small text-uppercase fw-bold">Vendas</span>
+                            <h3 class="fw-bold mb-0 mt-1 text-warning">{{ vendas|length }}</h3>
+                        </div>
+                        <div class="icon-shape bg-warning text-white"><i class="fas fa-shopping-bag"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-metric p-4 shadow-sm mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <h5 class="fw-bold mb-1"><i class="fas fa-bullseye text-danger me-2"></i>Meta de Faturamento</h5>
+                    <p class="text-muted small mb-0">Acompanhamento do original mensal da VendaPlus.</p>
+                </div>
+                <div class="col-md-8">
+                    <div class="d-flex justify-content-between mb-2 small fw-bold text-secondary">
+                        <span>Progresso: <span id="textoPorcentagem">0%</span></span>
+                        <span>Meta: <span id="textoMeta">R$ 50.000,00</span></span>
+                    </div>
+                    <div class="progress" style="height: 18px;">
+                        <div id="barraProgresso"
+                            class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                            role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0"
+                            aria-valuemax="100">
+                        </div>
+                    </div>
+                    <div class="mt-2 small text-muted text-end">
+                        Faltam <span id="textoRestante" class="fw-semibold text-dark">R$ 0,00</span> para atingir a
+                        meta!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-5">
+            <div class="col-md-5">
+                <div class="card card-chart p-4 shadow-sm h-100">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-chart-area text-primary me-2"></i>Evolução Diária</h5>
+                    <div style="position: relative; height:220px;">
+                        <canvas id="graficoEvolucao"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card card-chart p-4 shadow-sm h-100">
+                    <div style="position: relative; height:250px; display: flex; justify-content: center;">
+                        <canvas id="graficoPagamento"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-chart p-4 shadow-sm h-100">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-trophy text-warning me-2"></i>Top 5 Produtos</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-borderless align-middle mb-0">
+                            <thead>
+                                <tr class="text-muted small text-uppercase">
+                                    <th>Item</th>
+                                    <th class="text-end">Qtd</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for prod in top_produtos %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-semibold text-dark text-truncate d-inline-block"
+                                            style="max-width: 180px;">
+                                            {{ loop.index }}. {{ prod.nome }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2.5">{{
+                                            prod.qtd }} un</span>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-4 small">Nenhum dado no período.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4"><i class="fas fa-receipt me-2 text-secondary"></i>Fluxo de Caixa Detalhado</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Cód</th>
+                                <th>Data</th>
+                                <th>Cliente</th>
+                                <th>Item Vendido</th>
+                                <th>Qtd</th>
+                                <th>Total Recebido</th>
+                                <th>Lucro Real</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for venda in vendas %}
+                            <tr>
+                                <td class="text-muted">#{{ venda.id }}</td>
+                                <td><small>{{ venda.data_venda }}</small></td>
+                                <td><strong>{{ venda.cliente_nome }}</strong></td>
+                                <td>
+                                    <span class="badge bg-light text-dark border me-1">
+                                        {% if 'iphone' in venda.produto_nome.lower() %}
+                                        <i class="fas fa-mobile-alt me-1 text-primary"></i> Apple
+                                        {% else %}
+                                        <i class="fas fa-tshirt me-1 text-danger"></i> Grife
+                                        {% endif %}
+                                    </span>
+                                    {{ venda.produto_nome }}
+                                </td>
+                                <td>{{ venda.quantidade }}x</td>
+                                <td class="fw-bold text-dark">R$ {{ "%.2f"|format(venda.valor_total) }}</td>
+                                <td>
+                                    <span class="badge bg-success-subtle text-success fw-bold p-2 px-3">
+                                        + R$ {{ "%.2f"|format(venda.lucro_real) }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="fas fa-chart-bar fs-2 d-block mb-2 opacity-50"></i>
+                                    Nenhuma venda registrada ainda no sistema.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Carregando arrays processados vindos do app.py
+        const labelsEvolucao = {{ labels_evolucao | tojson }};
+        const valoresEvolucao = {{ valores_evolucao | tojson }};
+
+        // LÓGICA DA META DE VENDAS
+        const valorMeta = 500000;
+        const faturamentoAtual = parseFloat("{{ faturamento }}") || 0;
+
+        // Cálculos
+        let porcentagem = (faturamentoAtual / valorMeta) * 100;
+        if (porcentagem > 100) porcentagem = 100;
+
+        let restante = valorMeta - faturamentoAtual;
+        if (restante < 0) restante = 0;
+
+        // Atualização dos elementos na tela
+        document.getElementById('textoMeta').innerText = valorMeta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        document.getElementById('textoPorcentagem').innerText = porcentagem.toFixed(1) + '%';
+        document.getElementById('textoRestante').innerText = restante.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        const barra = document.getElementById('barraProgresso');
+        barra.style.width = porcentagem + '%';
+        barra.setAttribute('aria-valuenow', porcentagem);
+
+        if (porcentagem >= 100) {
+            barra.classList.remove('progress-bar-animated');
+            document.querySelector('.text-end').innerHTML = "🎉 <strong>Parabéns! A meta estipulada foi alcançada!</strong>";
+        }
+
+        // 1. Configuração do Gráfico de Evolução Diária (Linha)
+        const ctxLinha = document.getElementById('graficoEvolucao').getContext('2d');
+        new Chart(ctxLinha, {
+            type: 'line',
+            data: {
+                labels: labelsEvolucao,
+                datasets: [{
+                    label: 'Faturamento (R$)',
+                    data: valoresEvolucao,
+                    borderColor: '#0d6efd',
+                    backgroundColor: 'rgba(13, 110, 253, 0.05)',
+                    borderWidth: 2.5,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#0d6efd'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { grid: { color: '#f1f1f1' }, ticks: { font: { size: 10 } } },
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+
+        // 2. Configuração do Gráfico de Pizza (Corrigido)
+        const ctxPizza = document.getElementById('graficoPagamento').getContext('2d');
+        new Chart(ctxPizza, {
+            type: 'pie',
+            data: {
+                labels: {{ labels_pagamento | tojson }},
+                datasets: [{
+                    label: 'Gastos por Categoria',
+                    data: {{ valores_pagamento | tojson }},
+                    backgroundColor: [
+                        '#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#6366f1'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribuição de Despesas'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
